@@ -5,7 +5,7 @@ to handling a repository.
 
 import os, requests
 
-class Repository:
+class Repository(object):
     """ Class representing a package repository """
 
     def __init__(self, url, root_dir = ".", cache_dir = ".niji"):

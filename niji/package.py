@@ -1,7 +1,7 @@
 """
 Package module to represent a package
 """
-class Package:
+class Package(object):
     def __init__(self):
         pass
 
