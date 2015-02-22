@@ -8,9 +8,13 @@ python:
 
 install:
   - pip install tox
+  - pip install coveralls
 
 script:
-  - tox
+  - coverage run --source=niji tox
+
+after_success:
+  coveralls
 
 notifications:
   email: true
