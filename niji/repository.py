@@ -8,7 +8,7 @@ import os, requests
 class Repository:
     """ Class representing a package repository """
 
-    def __init(self, url, root_dir = ".", cahce_dir = ".niji"):
+    def __init__(self, url, root_dir = ".", cahce_dir = ".niji"):
         self.url = url
         self.cache_dir = cahce_dir
         self.root_dir = root_dir

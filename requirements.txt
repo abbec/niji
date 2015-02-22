@@ -1,3 +1,4 @@
-nose
 requests
 sphinx
+pytest
+tox
