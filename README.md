@@ -10,16 +10,23 @@ A small, simple package management library written in Python. Supports Python 2.
 ## setting up for development
 
 create a virtualenv and run
+
 	$ pip install -r requirements.txt
+
 This will install all the needed python packages.
 
 Set the package up for development
+
 	$ pip install -e .
+
 This will create an editable install of the package which is needed for tests and other things.
 
 To run tests
+
 	$ py.test
+
 or to run with different python versions at once (you will need python 2.7, python 3.4 and pypy installed):
+
 	$ tox
 
 Happy hacking!
