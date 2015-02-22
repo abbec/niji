@@ -9,9 +9,11 @@ python:
 install:
   - pip install tox
   - pip install coveralls
+  - pip install pytest-cov
+  - python setup.py develop
 
 script:
-  - coverage run --source=niji tox
+        - py.test --cov niji/
 
 after_success:
   coveralls
