@@ -8,22 +8,40 @@ import os, requests
 class Repository:
     """ Class representing a package repository """
 
-    def __init__(self, url, root_dir = ".", cahce_dir = ".niji"):
+    def __init__(self, url, root_dir = ".", cache_dir = ".niji"):
         self.url = url
-        self.cache_dir = cahce_dir
         self.root_dir = root_dir
-        if not os.path.exists(os.path.join(self.root_dir, self.cache_dir)):
-            os.mkdir(os.path.join(self.root_dir, self.cache_dir))
+        self.cache_dir = os.path.join(self.root_dir, cache_dir)
+        if not os.path.exists(self.cache_dir):
+            os.mkdir(self.cache_dir)
 
     def get_package_list(self, branch):
         """
         Fetch or refresh the package list
         for a given branch.
         """
-        if not os.path.exists(os.path.join(self.root_dir, self.cache_dir, branch)):
-            os.mkdir(os.path.join(self.root_dir, self.cache_dir, branch))
+        branchdir = os.path.join(self.cache_dir, branch)
+        if not os.path.exists(branchdir):
+            os.mkdir(branchdir)
 
         # download the package index file
+        # and save it to the cache dir
+        try:
+            with open(os.path.join(branchdir, "packages.list"), 'wb') as handle:
+                response = requests.get(self.url + "/{0}/packages.list".format(branch), stream=True)
+
+                if not response.ok:
+                    # todo: something went wrong
+                    print("There was an error in fetching package list")
+                    return
+
+                for block in response.iter_content(1024):
+                    if not block:
+                        break
+
+                    handle.write(block)
+        except requests.ConnectionError:
+            print("Error in connecting to {0}.".format(self.url))
 
     def search_package(self, query):
         """
@@ -34,7 +52,7 @@ class Repository:
         Returns a list of package names that matches the query
         or an empty list if no packages matches the query.
         """
-        pass
+        return [""]
 
     def get_diff_packages(self, package_name, version):
         """
@@ -42,6 +60,7 @@ class Repository:
         for the given package that is newer than the version
         given.
         """
+        pass
 
     def download_package(self, package_name):
         """
