@@ -5,7 +5,7 @@
 [![Documentation Status](https://readthedocs.org/projects/niji/badge/?version=latest)](https://readthedocs.org/projects/niji/?badge=latest)
 
 # niji
-A small, simple package management library written in Python. Supports Python 2.7+ and Python 3.4+.
+A small, simple package management library written in Python. Supports Python 2.7+ and Python 3.5+.
 
 ## setting up for development
 
@@ -14,12 +14,6 @@ create a virtualenv and run
 	$ pip install -r requirements.txt
 
 This will install all the needed python packages.
-
-Set the package up for development
-
-	$ pip install -e .
-
-This will create an editable install of the package which is needed for tests and other things.
 
 To run tests
 

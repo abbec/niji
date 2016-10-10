@@ -1,4 +1,4 @@
-requests
+-e .
 sphinx
 pytest
 pytest-cov
