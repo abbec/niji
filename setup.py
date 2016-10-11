@@ -4,5 +4,6 @@ setup(name='niji',
         packages=['niji'],
         install_requires=[
             'requests',
+            'semantic_version'
             ]
         )

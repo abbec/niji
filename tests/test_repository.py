@@ -2,6 +2,8 @@ import pytest
 from niji.repository import Repository
 import os
 
+# todo: Mock os
+
 def test_creation(tmpdir):
     repo = Repository("http://localhost:4567", root_dir = str(tmpdir))
 

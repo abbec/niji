@@ -3,31 +3,41 @@ Module that contains functions that relates
 to handling a repository.
 """
 
-import os, requests
+import os
+import requests
+import tarfile
+import json
+import re
+import semantic_version
+
 
 class Repository(object):
     """ Class representing a package repository """
 
-    def __init__(self, url, root_dir = ".", cache_dir = ".niji"):
+    def __init__(self, url, root_dir = ".", cache_dir = ".niji", use_version_folders=False):
         self.url = url
         self.root_dir = root_dir
         self.cache_dir = os.path.join(self.root_dir, cache_dir)
         if not os.path.exists(self.cache_dir):
             os.mkdir(self.cache_dir)
 
-    def get_package_list(self, branch):
+        self.use_version_folders = use_version_folders
+        self.branchdir = os.path.join(self.cache_dir, branch)
+        self.package_list_path = os.path.join(branchdir, "packages.list")
+
+
+    def get_package_list(self, branch = "main"):
         """
         Fetch or refresh the package list
         for a given branch.
         """
-        branchdir = os.path.join(self.cache_dir, branch)
-        if not os.path.exists(branchdir):
-            os.mkdir(branchdir)
+        if not os.path.exists(self.branchdir):
+            os.mkdir(self.branchdir)
 
         # download the package index file
         # and save it to the cache dir
         try:
-            with open(os.path.join(branchdir, "packages.list"), 'wb') as handle:
+            with open(self.package_list_path, 'wb') as handle:
                 response = requests.get(self.url + "/{0}/packages.list".format(branch), stream=True)
 
                 if not response.ok:
@@ -54,36 +64,99 @@ class Repository(object):
         """
         return [""]
 
-    def get_diff_packages(self, package_name, version):
+
+    def query_package(self, query):
         """
-        Returns a list of the available diff packages
-        for the given package that is newer than the version
-        given.
+        Retrieve information for a locally installed package
         """
         pass
 
-    def download_package(self, package_name):
+    def install_packages(self, packages, strict=True):
         """
-        Download the package with the specified name.
-
-        Returns a package object that can be used to
-        install the package.
+        Install a set of packages as a unit, making sure that
+        there are no resolution conflicts if strict is specified
         """
-        pass
+        installed = []
+        if not strict:
+            for p in packages:
+                installed.extend(self.install_package(p['name'], p['version'], False))
 
-    def upload_package(self, branch, package):
+
+    def install_package(self, package_name, version_spec=None, strict=True):
+        """
+        Install the package with the specified name
+
+        """
+        to_install = {}
+        installed = []
+        version = self._resolve_version(version_spec)
+        package = {"name": package_name, "version": version}
+        tree = {}
+        with tarfile.TarFile(self.package_list_path, mode="r:gz") as f:
+            tree = self._create_install_tree(f, package)
+
+        # actually install the packages
+
+
+    def _create_install_tree(self, package_dir, package, skip_root=False):
+
+        tree = {}
+
+        if not skip_root:
+            tree[package['name']] = {'version': package['version']}
+
+        deps = self._get_dependencies(package_dir, package['name'], package['version'])
+        for d in deps:
+            n = d['name']
+            if not n in tree:
+                tree[n] = {"name": n}
+                tree[n]['versions'] = []
+
+            entry = tree[n]
+            entry['versions'].append(d['version'])
+
+            # resolve version to continue with
+                
+
+        return tree
+        
+
+    def _get_dependencies(self, package_list, package_name, version):
+        fpath = self._get_package_dir(package_name, version)
+        fpath = os.path.join(fpath, "{}.npkg".format(package_name))
+        dependencies = []
+        with package_list.extractfile(fpath) as f:
+            package_data = json.load(f)
+            dependencies = package_data['dependencies']
+
+        return dependencies
+
+
+    def _resolve_version(self, package_list, package_name, version_spec=None):
+        versions = self._get_versions(package_list, package_name)
+        vspec = semantic_version.Spec(version_spec)
+
+        return vspec.select(versions)
+        
+
+    def _get_versions(self, package_list, package_name):
+        versions = []
+        for e in package_list.getnames():
+            m = re.search("{}\/(\.+)\/$".format(packate_name), e)
+            if m.group[0]:  # is a folder
+                versions.append(semantic_version.Version(m.group[0]))
+
+        return versions
+
+
+
+    def upload_package(self, package, branch="main"):
         """
         Upload the supplied package to this repository
         and the given branch.
         """
         pass
 
-    def clear_cache(self, delete_have = False):
-        """
-        Clear the cache by deleting downloaded packages
-        and the package list. If delete_have is true,
-        the have file will be deleted and niji will
-        think that no packages are installed under
-        this root.
-        """
-        pass
+
+    def _get_package_dir(self, package_name, version = ""):
+        return os.path.join(package_name, version)
