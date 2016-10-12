@@ -116,18 +116,55 @@ class Repository(object):
             entry['versions'].append(d['version'])
 
             # resolve version to continue with
-                
+
 
         return tree
-        
 
-    def _get_dependencies(self, package_list, package_name, version):
-        fpath = self._get_package_dir(package_name, version)
-        fpath = os.path.join(fpath, "{}.npkg".format(package_name))
-        dependencies = []
-        with package_list.extractfile(fpath) as f:
-            package_data = json.load(f)
-            dependencies = package_data['dependencies']
+
+    def _create_command_list(self, f, package, dl, deps=None):
+            name = package['name']
+            spec = package.get('spec', None)
+            res_ver = self._resolve_version(f, name, spec)
+
+            if name not in dl:
+                dl[name] = []
+
+            dl[name].append((res_ver,
+                semantic_version.Spec(spec),
+                name))
+
+            deps = deps or self._get_dependencies(f, name, res_ver)
+            for d in deps:
+                self._create_command_list(f, {'name':d['name'], 'spec':d.get('version', None)}, dl)
+
+
+    def create_command_list(self, package=None, package_file=None, strict=False):
+        dl = {}
+        deps = None
+
+        if package_file:
+            deps = self._get_dependencies(package_file=package_file)
+
+        with tarfile.TarFile(self.package_list_path, mode="r:gz") as f:
+            self._create_command_list(f, package, dl, deps)
+
+
+    def _get_dependencies(self, package_list=None, package_name=None, version=None, package_file=None):
+
+        package_data = None
+
+        if package_file:
+            with open(explicit_file, mode='r') as f:
+                package_data = json.load(f)
+                dependencies = package_data['dependencies']
+        else:
+            fpath = self._get_package_dir(package_name, version)
+            fpath = os.path.join(fpath, "{}.npkg".format(package_name))
+            dependencies = []
+
+            with package_list.extractfile(fpath) as f:
+                package_data = json.load(f)
+                dependencies = package_data['dependencies']
 
         return dependencies
 
@@ -137,7 +174,7 @@ class Repository(object):
         vspec = semantic_version.Spec(version_spec)
 
         return vspec.select(versions)
-        
+
 
     def _get_versions(self, package_list, package_name):
         versions = []
