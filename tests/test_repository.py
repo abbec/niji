@@ -1,18 +1,23 @@
 import pytest
 from niji.repository import Repository
 import os
+import unittest
 
 # todo: Mock os
+@unittest.mock.patch('niji.repository.os.path')
+@unittest.mock.patch('niji.repository.os')
+def test_creation(mock_os, mock_path):
+    mock_path.exists.return_value = False
+    repo = Repository("http://localhost:4567")
 
-def test_creation(tmpdir):
-    repo = Repository("http://localhost:4567", root_dir = str(tmpdir))
+    assert mock_os.mkdir.called
 
-    assert os.path.exists(repo.cache_dir)
+def test_package_file_fetch():
+    pass
 
-def test_package_file_fetch(tmpdir):
-    repo = Repository("http://localhost:4567", root_dir = str(tmpdir))
+@unittest.mock.patch('niji.repository.os.path')
+def test_create_command_list(mock_path):
+    mock_path.exists.return_value = True
+    repo = Repository("http://localhost:4567")
 
-    branch = "testbranch"
-    repo.get_package_list(branch)
-
-    assert os.path.exists(os.path.join(repo.cache_dir, branch))
+    
