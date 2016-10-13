@@ -56,18 +56,22 @@ class Repository(object):
 
 
     def _create_command_list(self, f, package, dl, required_by, deps=None):
-            name = package['name']
-            spec = package.get('spec', None)
-            res_ver = self._resolve_version(f, name, spec)
 
-            if name not in dl:
-                dl[name] = []
+            name = "todo"
+            if not deps:
+                name = package['name']
+                spec = package.get('spec', None)
+                res_ver = self._resolve_version(f, name, spec)
 
-            dl[name].append((res_ver,
-                semantic_version.Spec(spec),
-                required_by))
+                if name not in dl:
+                    dl[name] = []
 
-            deps = deps or self._get_dependencies(f, name, res_ver)
+                dl[name].append((res_ver,
+                    semantic_version.Spec(spec or ">0.0.0"),
+                    required_by))
+
+                deps = self._get_dependencies(f, name, res_ver)
+
             for d in deps:
                 self._create_command_list(f, {'name':d['name'], 'spec':d.get('version', None)}, dl, name)
 
@@ -77,7 +81,7 @@ class Repository(object):
         deps = None
 
         if package_file:
-            deps, package = self._get_dependencies(package_file=package_file)
+            deps = self._get_dependencies(package_file=package_file)
 
         with tarfile.open(self.package_list_path, mode="r:gz") as f:
             self._create_command_list(f, package, dl, 'root', deps)
@@ -86,8 +90,6 @@ class Repository(object):
 
 
     def _get_dependencies(self, package_list=None, package_name=None, version=None, package_file=None):
-
-        package_data = None
 
         if package_file:
             with open(explicit_file, mode='r') as f:
@@ -100,14 +102,14 @@ class Repository(object):
 
             with package_list.extractfile(fpath) as f:
                 package_data = json.load(f)
-                dependencies = package_data['dependencies']
+                dependencies = package_data.get('dependencies', [])
 
-        return dependencies, package_data
+        return dependencies
 
 
     def _resolve_version(self, package_list, package_name, version_spec=None):
         versions = self._get_versions(package_list, package_name)
-        vspec = semantic_version.Spec(version_spec)
+        vspec = semantic_version.Spec(version_spec or ">0.0.0")
 
         return vspec.select(versions)
 
@@ -115,9 +117,9 @@ class Repository(object):
     def _get_versions(self, package_list, package_name):
         versions = []
         for e in package_list.getnames():
-            m = re.search("{}\/(\.+)\/$".format(packate_name), e)
-            if m.group[0]:  # is a folder
-                versions.append(semantic_version.Version(m.group[0]))
+            m = re.search("{}\/(.+)\/$".format(package_name), e)
+            if m and m.group(1):
+                versions.append(semantic_version.Version(m.group(1)))
 
         return versions
 
