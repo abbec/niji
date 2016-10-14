@@ -66,14 +66,14 @@ class Repository(object):
                 if name not in dl:
                     dl[name] = []
 
-                dl[name].append((res_ver,
-                    semantic_version.Spec(spec or ">0.0.0"),
-                    required_by))
+                dl[name].append({'version':res_ver,
+                    'spec':semantic_version.Spec(spec or ">0.0.0"),
+                    'req':required_by})
 
                 deps = self._get_dependencies(f, name, res_ver)
 
             for d in deps:
-                self._create_command_list(f, {'name':d['name'], 'spec':d.get('version', None)}, dl, name)
+                self._create_command_list(f, {'name':d['name'], 'spec':d.get('spec', None)}, dl, name)
 
 
     def create_command_list(self, package=None, package_file=None, strict=False, remove_me_override=None):
